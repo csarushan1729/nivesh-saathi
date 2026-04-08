@@ -2,67 +2,86 @@ const express = require("express");
 const router = express.Router();
 const fetch = require("node-fetch");
 
+// ── Language-specific system prompts ─────────────────────────────────────────
 const SYSTEM_PROMPTS = {
-  en: `You are NiveshSaathi, a friendly Indian investment assistant. Help regular Indians invest their money wisely.
+  en: `You are NiveshSaathi, a friendly Indian investment assistant helping regular Indians invest wisely.
 
 Rules:
-- Respond in simple, clear English. Avoid complex financial jargon.
+- Respond ONLY in clear, simple English. No jargon without explanation.
 - Always use ₹ (Indian Rupee) for all currency amounts.
-- For any investment amount mentioned, suggest specific products: SIP, Mutual Funds, FDs, or Liquid Funds.
-- Ask about: amount available, goal (what for?), time horizon (when is money needed?), risk comfort.
-- If user gives all info, provide concrete recommendations with fund names.
+- Suggest specific products: SIP, Mutual Funds, FDs, or Liquid Funds.
 - Keep responses SHORT and scannable (4-6 lines max). Use bullet points.
-- Common mappings: Emergency fund → Liquid funds | Child education → SIP in equity | Marriage → Balanced funds | House → FD + Hybrid | Retirement → Long-term SIP
-- Mention "past returns don't guarantee future results" once per conversation.
+- Be warm, encouraging, and never make the user feel stupid.
+- Goal mappings: Emergency fund → Liquid funds | Education → SIP in equity | Marriage → Balanced funds | House → FD + Hybrid | Retirement → Long-term SIP
+- Mention "past returns don't guarantee future results" only once per conversation.
 - If asked about stocks/crypto, gently redirect to mutual funds for beginners.
-- Be encouraging, warm, and supportive. Never make the user feel stupid.
-- Always end with a follow-up question if you need more info.`,
+- Always end with a helpful follow-up question when you need more info.`,
 
-  hi: `Aap NiveshSaathi hain, ek friendly Indian investment assistant. Aap regular Indians ko unke paise wisely invest karne mein help karte hain.
+  hi: `Aap NiveshSaathi hain, ek friendly Indian investment assistant jo regular Indians ko wisely invest karne mein help karte hain.
 
 Rules:
-- Hinglish mein respond karo (Hindi words + English script). Simple aur clear language use karo.
-- Hamesha ₹ (Indian Rupee) use karo currency ke liye.
-- Kisi bhi investment amount ke liye specific products suggest karo: SIP, Mutual Funds, FDs, ya Liquid Funds.
-- Ye poochho: kitna amount hai, goal kya hai, kab paise chahiye, risk kitna le sakte hain.
-- Agar user ne sab info de di, toh concrete recommendations do fund names ke saath.
+- SIRF Hinglish mein respond karo (Hindi words, English script). Example: "Aapko SIP mein invest karna chahiye kyunki yeh long-term ke liye best hai."
+- Hamesha ₹ use karo currency ke liye.
+- Specific products suggest karo: SIP, Mutual Funds, FD, ya Liquid Funds.
 - Responses SHORT rakhein (4-6 lines max). Bullet points use karo.
-- Common mappings: Emergency fund → Liquid funds | Bacchon ki padhai → SIP equity | Shaadi → Balanced funds | Ghar → FD + Hybrid | Retirement → Long-term SIP
-- "Past returns future results guarantee nahi karte" ek baar zaroor mention karo.
-- Stocks/crypto ke baare mein poochha jaye toh gently mutual funds ki taraf redirect karo beginners ke liye.
-- Encouraging, warm aur supportive raho. User ko kabhi stupid feel mat karao.
-- Agar aur information chahiye toh follow-up question zaroor poochho.`,
+- Warm aur encouraging raho. User ko kabhi stupid feel mat karao.
+- Goal mappings: Emergency fund → Liquid funds | Bacchon ki padhai → SIP equity | Shaadi → Balanced funds | Ghar → FD + Hybrid | Retirement → Long-term SIP
+- "Past returns future guarantee nahi karte" ek baar zaroor bolna.
+- Stocks/crypto ke baare mein puchha jaye toh mutual funds recommend karo beginners ke liye.`,
 
-  mr: `You are NiveshSaathi, a friendly Indian investment assistant. Respond in Marathi mixed with simple English words for financial terms.
-
-Rules:
-- Marathi mein respond kara (Marathi words with some English finance terms).
-- Hamesha ₹ (Indian Rupee) use kara currency sathi.
-- Specific products suggest kara: SIP, Mutual Funds, FDs, ya Liquid Funds.
-- Short responses (4-6 lines). Bullet points use kara.
-- Warm aur encouraging raha.`,
-
-  ta: `You are NiveshSaathi, a friendly Indian investment assistant. Respond in Tamil mixed with simple English words for financial terms.
+  te: `Meeru NiveshSaathi, oka friendly Indian investment assistant, regular Indians ki wisely invest cheyyataniki help chestaru.
 
 Rules:
-- Tamil with simple English financial terms.
-- Always use ₹ for currency.
-- Suggest: SIP, Mutual Funds, FDs, or Liquid Funds.
-- Keep responses short (4-6 lines). Use bullet points.
-- Be warm and encouraging.`
+- KEVALAM Telugu-English mix (Tenglish) lo respond cheyyandi. Example: "Meeru SIP lo invest cheyyali, idi long-term ki best."
+- Anni currency amounts ki ₹ (Indian Rupee) vadandi.
+- Specific products suggest cheyyandi: SIP, Mutual Funds, FDs, ya Liquid Funds.
+- Responses SHORT ga (4-6 lines max) mariyu bullet points vadandi.
+- Warm mariyu encouraging ga undandi. User ni ela aynaa silly feel cheseyakandi.
+- Goal mappings: Emergency fund → Liquid funds | Pillala chadduvulu → SIP equity | Pelli → Balanced funds | Intlu → FD + Hybrid | Retirement → Long-term SIP
+- "Past returns future ki guarantee ivvavu" ani okasari mention cheyyandi.
+- Stocks/crypto gurinchi adagite, beginners ki mutual funds recommend cheyyandi.`,
 };
 
 // POST /api/chat
 router.post("/", async (req, res) => {
-  const { messages, language = "en" } = req.body;
+  const { messages, language = "en", userProfile = {} } = req.body;
 
+  // Validate input
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: "messages array is required" });
+    return res.status(400).json({ error: "messages array is required and must not be empty" });
+  }
+
+  // Validate each message
+  for (const msg of messages) {
+    if (!msg.role || !msg.content) {
+      return res.status(400).json({ error: "Each message must have role and content fields" });
+    }
+    if (!["user", "assistant"].includes(msg.role)) {
+      return res.status(400).json({ error: "Message role must be 'user' or 'assistant'" });
+    }
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "API key not configured. Add ANTHROPIC_API_KEY to .env" });
+    return res.status(500).json({
+      error: "ANTHROPIC_API_KEY is not configured. Add it to your .env file.",
+    });
+  }
+
+  // Build system prompt with user profile context
+  let systemPrompt = SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS.en;
+
+  if (userProfile && userProfile.name) {
+    const profileLines = [
+      `\n\nUser Profile (use this to personalize your response):`,
+      `- Name: ${userProfile.name}`,
+      userProfile.profession ? `- Profession: ${userProfile.profession}` : null,
+      userProfile.investmentRange ? `- Monthly investment budget: ${userProfile.investmentRange}` : null,
+      userProfile.goal ? `- Primary goal: ${userProfile.goal}` : null,
+      userProfile.risk ? `- Risk appetite: ${userProfile.risk}` : null,
+      userProfile.language ? `- Language preference: ${userProfile.language}` : null,
+    ].filter(Boolean).join("\n");
+    systemPrompt += profileLines;
   }
 
   try {
@@ -75,34 +94,47 @@ router.post("/", async (req, res) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 800,
-        system: SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS.en,
+        max_tokens: 900,
+        system: systemPrompt,
         messages: messages.map((m) => ({
           role: m.role,
-          content: m.content,
+          content: String(m.content),
         })),
       }),
     });
 
     if (!response.ok) {
-      const errData = await response.json();
-      console.error("Anthropic API Error:", errData);
+      let errData;
+      try {
+        errData = await response.json();
+      } catch {
+        errData = { error: { message: "Unknown API error" } };
+      }
+      console.error("Anthropic API error:", response.status, errData);
       return res.status(response.status).json({
-        error: "AI service error",
-        detail: errData.error?.message || "Unknown error",
+        error: "AI service returned an error",
+        detail: errData?.error?.message || "Please check your API key and try again",
       });
     }
 
     const data = await response.json();
-    const reply = data.content?.map((b) => b.text || "").join("") || "";
+    const reply = data.content?.map((b) => (b.type === "text" ? b.text : "")).join("") || "";
+
+    if (!reply) {
+      return res.status(500).json({ error: "AI returned an empty response. Please try again." });
+    }
 
     return res.json({
       reply,
-      usage: data.usage,
+      language,
+      usage: data.usage || null,
     });
   } catch (err) {
     console.error("Chat route error:", err.message);
-    return res.status(500).json({ error: "Server error", detail: err.message });
+    return res.status(500).json({
+      error: "Failed to reach AI service",
+      detail: err.message,
+    });
   }
 });
 

@@ -8,16 +8,20 @@ let goals = [...portfolioData.goals];
 
 // GET /api/portfolio
 router.get("/", (req, res) => {
+  const { lang = "en" } = req.query;
   const total = portfolio.reduce((a, b) => a + b.current, 0);
   const invested = portfolio.reduce((a, b) => a + b.invested, 0);
   const gain = total - invested;
-  const gainPct = invested > 0 ? ((gain / invested) * 100).toFixed(2) : 0;
+  const gainPct = invested > 0 ? ((gain / invested) * 100).toFixed(2) : "0.00";
 
   const breakdown = {
     equity: portfolio.filter((f) => ["equity", "elss"].includes(f.category)).reduce((a, b) => a + b.current, 0),
     debt: portfolio.filter((f) => ["liquid", "debt", "fd"].includes(f.category)).reduce((a, b) => a + b.current, 0),
     hybrid: portfolio.filter((f) => f.category === "hybrid").reduce((a, b) => a + b.current, 0),
   };
+
+  const nameKey = lang === "te" ? "name_te" : lang === "hi" ? "name_hi" : "name_en";
+  const localizedGoals = goals.map((g) => ({ ...g, name: g[nameKey] || g.name_en }));
 
   return res.json({
     holdings: portfolio,
@@ -28,7 +32,7 @@ router.get("/", (req, res) => {
       gainPercent: Number(gainPct),
       breakdown,
     },
-    goals,
+    goals: localizedGoals,
   });
 });
 
@@ -44,10 +48,10 @@ router.get("/:id", (req, res) => {
   });
 });
 
-// POST /api/portfolio - Add new holding
+// POST /api/portfolio — Add new holding
 router.post("/", (req, res) => {
   const { name, type, category, invested, risk, icon, fundId } = req.body;
-  if (!name || !invested) {
+  if (!name || invested === undefined) {
     return res.status(400).json({ error: "name and invested amount are required" });
   }
   const newHolding = {
@@ -66,11 +70,11 @@ router.post("/", (req, res) => {
   return res.status(201).json(newHolding);
 });
 
-// PUT /api/portfolio/:id - Update current value
+// PUT /api/portfolio/:id
 router.put("/:id", (req, res) => {
   const idx = portfolio.findIndex((p) => p.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Holding not found" });
-  portfolio[idx] = { ...portfolio[idx], ...req.body };
+  portfolio[idx] = { ...portfolio[idx], ...req.body, id: portfolio[idx].id };
   return res.json(portfolio[idx]);
 });
 
@@ -83,17 +87,24 @@ router.delete("/:id", (req, res) => {
 });
 
 // GET /api/portfolio/goals/all
-router.get("/goals/all", (req, res) => res.json(goals));
+router.get("/goals/all", (req, res) => {
+  const { lang = "en" } = req.query;
+  const nameKey = lang === "te" ? "name_te" : lang === "hi" ? "name_hi" : "name_en";
+  return res.json(goals.map((g) => ({ ...g, name: g[nameKey] || g.name_en })));
+});
 
-// POST /api/portfolio/goals - Add goal
+// POST /api/portfolio/goals
 router.post("/goals", (req, res) => {
-  const { icon, name_en, name_hi, target, deadline, color } = req.body;
-  if (!name_en || !target) return res.status(400).json({ error: "name and target are required" });
+  const { icon, name_en, name_hi, name_te, target, deadline, color } = req.body;
+  if (!name_en || !target) {
+    return res.status(400).json({ error: "name_en and target are required" });
+  }
   const newGoal = {
     id: "g" + Date.now(),
     icon: icon || "🎯",
     name_en,
     name_hi: name_hi || name_en,
+    name_te: name_te || name_en,
     target: Number(target),
     saved: 0,
     deadline: deadline || "TBD",
