@@ -1,0 +1,104 @@
+{
+  "portfolio": [
+    {
+      "id": "p001",
+      "fundId": "f004",
+      "name": "SBI Bluechip Fund",
+      "type": "Mutual Fund",
+      "category": "equity",
+      "invested": 15000,
+      "current": 17340,
+      "units": 42.3,
+      "nav": 409.93,
+      "sipAmount": 1500,
+      "sipDate": 5,
+      "startDate": "2023-01-05",
+      "risk": "medium",
+      "icon": "📈"
+    },
+    {
+      "id": "p002",
+      "fundId": "f001",
+      "name": "HDFC Liquid Fund",
+      "type": "Liquid Fund",
+      "category": "liquid",
+      "invested": 10000,
+      "current": 10412,
+      "units": 3.21,
+      "nav": 3243.6,
+      "sipAmount": null,
+      "sipDate": null,
+      "startDate": "2023-06-15",
+      "risk": "low",
+      "icon": "💧"
+    },
+    {
+      "id": "p003",
+      "fundId": "f002",
+      "name": "Post Office FD",
+      "type": "Fixed Deposit",
+      "category": "fd",
+      "invested": 25000,
+      "current": 26750,
+      "units": null,
+      "nav": null,
+      "sipAmount": null,
+      "sipDate": null,
+      "startDate": "2023-03-10",
+      "maturityDate": "2026-03-10",
+      "risk": "low",
+      "icon": "🏦"
+    },
+    {
+      "id": "p004",
+      "fundId": "f007",
+      "name": "Axis ELSS Fund",
+      "type": "SIP / ELSS",
+      "category": "elss",
+      "invested": 6000,
+      "current": 6780,
+      "units": 18.5,
+      "nav": 366.49,
+      "sipAmount": 500,
+      "sipDate": 1,
+      "startDate": "2024-01-01",
+      "risk": "high",
+      "icon": "💰"
+    }
+  ],
+  "goals": [
+    {
+      "id": "g001",
+      "icon": "🏠",
+      "name_en": "Buy a Home",
+      "name_hi": "Ghar Kharidna",
+      "target": 500000,
+      "saved": 56750,
+      "deadline": "Dec 2027",
+      "color": "#0057FF",
+      "monthlyRequired": 12500
+    },
+    {
+      "id": "g002",
+      "icon": "✈️",
+      "name_en": "Europe Trip",
+      "name_hi": "Europe Trip",
+      "target": 150000,
+      "saved": 27162,
+      "deadline": "Jun 2026",
+      "color": "#7C3AED",
+      "monthlyRequired": 10000
+    },
+    {
+      "id": "g003",
+      "icon": "🎓",
+      "name_en": "MBA Course",
+      "name_hi": "MBA Karna",
+      "target": 200000,
+      "saved": 10000,
+      "deadline": "Jul 2027",
+      "color": "#00875A",
+      "monthlyRequired": 8000
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "portfolio": [
+    {
+      "id": "p001",
+      "name": "SBI Bluechip",
+      "category": "equity",
+      "invested": 15000,
+      "current": 17000,
+      "risk": "medium"
+    },
+    {
+      "id": "p002",
+      "name": "HDFC Liquid",
+      "category": "liquid",
+      "invested": 10000,
+      "current": 10400,
+      "risk": "low"
+    }
+  ],
+  "goals": []
+}

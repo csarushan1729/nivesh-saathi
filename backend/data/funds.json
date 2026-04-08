@@ -1,0 +1,5 @@
+{
+  "low": ["Liquid Fund", "FD"],
+  "medium": ["Bluechip Fund", "Hybrid Fund"],
+  "high": ["ELSS", "Small Cap"]
+}
