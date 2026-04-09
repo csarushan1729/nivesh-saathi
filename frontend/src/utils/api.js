@@ -1,8 +1,8 @@
 import axios from "axios";
 
-const BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : "/api";  // uses Vite proxy in dev
+const BASE = process.env.REACT_APP_API_URL
+  ? `${process.env.REACT_APP_API_URL}/api`
+  : "/api";
 
 const api = axios.create({ baseURL: BASE, timeout: 30000 });
 
