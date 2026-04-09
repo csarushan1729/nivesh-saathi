@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from "react";
-import { userAPI, portfolioAPI } from "./utils/api";
+import { userAPI, portfolioAPI, chatAPI } from "./utils/api";
 
 // ─── DUMMY DATA ────────────────────────────────────────────────────────────────
 const DUMMY_PORTFOLIO = [
@@ -362,21 +362,24 @@ function ChatScreen({ user }) {
     setLoading(true);
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: SYSTEM_PROMPT,
-          messages: updated.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-      const data = await res.json();
-      const reply = data.content?.map((b) => b.text || "").join("") || "Sorry, kuch problem aayi. Dobara try karein.";
+      const reply = await chatAPI.send(
+        updated.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+        "en",
+        user
+      );
+
       setMessages([...updated, { role: "assistant", content: reply }]);
-    } catch {
-      setMessages([...updated, { role: "assistant", content: "Internet ya API issue hai. Dobara try karein! 🙏" }]);
+    } catch (err) {
+      setMessages([
+        ...updated,
+        {
+          role: "assistant",
+          content: "Internet ya API issue hai. Dobara try karein! 🙏",
+        },
+      ]);
     }
     setLoading(false);
   };
