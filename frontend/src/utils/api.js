@@ -1,45 +1,56 @@
-const BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
+import axios from "axios";
 
-const handle = async (res) => {
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || data.detail || "API error");
-  return data;
+const BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : "/api";  // uses Vite proxy in dev
+
+const api = axios.create({ baseURL: BASE, timeout: 30000 });
+
+api.interceptors.request.use((cfg) => {
+  console.log(`[API] ${cfg.method?.toUpperCase()} ${cfg.url}`);
+  return cfg;
+});
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    const msg = err.response?.data?.error || err.message || "Network error";
+    console.error("[API Error]", msg);
+    return Promise.reject(new Error(msg));
+  }
+);
+
+// ── Chat ──────────────────────────────────────────────────────────────────────
+export const chatAPI = {
+  // messages: [{role, content}], language: "en"|"hi"|"te", userProfile: {...}
+  send: (messages, language = "en", userProfile = {}) =>
+    api.post("/chat", { messages, language, userProfile }).then((r) => r.data.reply),
 };
 
-export const api = {
-  chat: (messages, language, userProfile) =>
-    fetch(`${BASE}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages, language, userProfile }),
-    }).then(handle),
-
-  recommend: (params) => {
-    const q = new URLSearchParams(params).toString();
-    return fetch(`${BASE}/api/recommend?${q}`).then(handle);
-  },
-
-  portfolio: (lang = "en") =>
-    fetch(`${BASE}/api/portfolio?lang=${lang}`).then(handle),
-
-  funds: (params = {}) => {
-    const q = new URLSearchParams(params).toString();
-    return fetch(`${BASE}/api/funds?${q}`).then(handle);
-  },
-
-  saveUser: (profile) =>
-    fetch(`${BASE}/api/users`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profile),
-    }).then(handle),
-
-  sipCalculate: (body) =>
-    fetch(`${BASE}/api/recommend/calculate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }).then(handle),
-
-  health: () => fetch(`${BASE}/api/health`).then(handle),
+// ── Recommendations ───────────────────────────────────────────────────────────
+export const recommendAPI = {
+  get: (params) => api.get("/recommend", { params }).then((r) => r.data),
+  calculate: (body) => api.post("/recommend/calculate", body).then((r) => r.data),
 };
+
+// ── Portfolio ─────────────────────────────────────────────────────────────────
+export const portfolioAPI = {
+  get: (lang = "en") => api.get("/portfolio", { params: { lang } }).then((r) => r.data),
+  add: (data) => api.post("/portfolio", data).then((r) => r.data),
+  update: (id, data) => api.put(`/portfolio/${id}`, data).then((r) => r.data),
+  remove: (id) => api.delete(`/portfolio/${id}`).then((r) => r.data),
+  addGoal: (data) => api.post("/portfolio/goals", data).then((r) => r.data),
+};
+
+// ── Funds ─────────────────────────────────────────────────────────────────────
+export const fundsAPI = {
+  getAll: (params = {}) => api.get("/funds", { params }).then((r) => r.data),
+  getOne: (id) => api.get(`/funds/${id}`).then((r) => r.data),
+};
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+export const userAPI = {
+  save: (profile) => api.post("/users", profile).then((r) => r.data),
+};
+
+export default api;

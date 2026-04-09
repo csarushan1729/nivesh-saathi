@@ -1,43 +1,59 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
-  background: #F7F6F3;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background: #F7F7F5;
   -webkit-font-smoothing: antialiased;
 }
 
-input, button, select, textarea {
-  font-family: inherit;
-}
+button, input, select, textarea { font-family: inherit; }
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-
 @keyframes bounce {
   0%, 80%, 100% { transform: scale(0); }
   40%           { transform: scale(1); }
 }
-
-@keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.5; }
+.animate-fadeInUp  { animation: fadeInUp  0.42s ease both; }
+.animate-fadeIn    { animation: fadeIn    0.3s  ease both; }
+.animate-slideUp   { animation: slideUp   0.38s ease both; }
+.animate-popIn     { animation: popIn     0.3s  ease both; }
+
+.app-wrapper {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #F7F7F5;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
-.animate-fadeUp { animation: fadeUp 0.4s ease both; }
-.animate-fadeIn { animation: fadeIn 0.3s ease both; }
+.screen-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 84px;
+}
